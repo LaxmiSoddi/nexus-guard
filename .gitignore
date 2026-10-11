@@ -1,0 +1,62 @@
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.design-cache/
+.v0-trash/
+.vercel/
+
+# Environment variables
+.env*.local
+
+# Common ignores
+node_modules
+.next/
+.DS_Store
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# Frontend dependencies and builds
+node_modules/
+.next/
+out/
+.vercel/
+
+# Python virtual environments and cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Java / Maven build output
+target/
+
+# Logs and temporary files
+*.log
+.DS_Store
+Thumbs.db
+
+# Local databases and generated data
+*.sqlite
+*.db
+
+# Generated TypeScript files
+*.tsbuildinfo
+
+# Python model training artifacts
+fraud-ai/.venv/
+fraud-ai/__pycache__/
+
+# Java build output
+backend-java/target/
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+!.env*.example
