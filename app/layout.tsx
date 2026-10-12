@@ -5,7 +5,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'NEXUS GUARD — Commerce Intelligence',
   description: 'Intelligent commerce. Explainable decisions. A fraud detection and inventory intelligence command center.',
-  generator: 'v0.app',
+  generator: 'NEXUS GUARD',
   icons: {
     icon: [
       {

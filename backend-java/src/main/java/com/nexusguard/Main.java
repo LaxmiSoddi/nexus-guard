@@ -93,7 +93,7 @@ public class Main {
         KafkaEventConsumer transactionConsumer =
                 new KafkaEventConsumer(
                         "transaction-events",
-                        "nexus-guard-transactions"
+                        "mvn \"exec:java\" \"-Dexec.mainClass=com.nexusguard.Main\"transactions"
                 );
 
         KafkaEventConsumer fraudAlertConsumer =

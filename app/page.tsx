@@ -99,10 +99,10 @@ const transactions: Transaction[] = [
 
 const navItems = [
   { label: 'Overview', icon: LayoutDashboard },
-  { label: 'Transactions', icon: CreditCard, count: '24' },
+  { label: 'Transactions', icon: CreditCard },
   { label: 'Fraud detective', icon: Fingerprint },
-  { label: 'Inventory', icon: Boxes, count: '7' },
-  { label: 'Incident center', icon: Bell, count: '3' },
+  { label: 'Inventory', icon: Boxes },
+  { label: 'Incident center', icon: Bell },
 ]
 
 const riskStyles: Record<Risk, string> = {
@@ -1914,13 +1914,124 @@ function IncidentsPage() {
   )
  }
 
-function RoutePage({ pathname, onSave }: { pathname: string; onSave: () => void }) {
+
+function RoutePage({
+  pathname,
+  onSave,
+  displayName,
+  setDisplayName,
+  emailNotifications,
+  setEmailNotifications,
+  appTheme,
+  setAppTheme,
+}: {
+  pathname: string
+  onSave: () => void
+  displayName: string
+  setDisplayName: (name: string) => void
+  emailNotifications: string
+  setEmailNotifications: (value: string) => void
+  appTheme: string
+  setAppTheme: (value: string) => void
+}) {
+
+  const [nameSaved, setNameSaved] = useState(false)
   if (pathname === '/transactions') return <TransactionsPage />
   if (pathname === '/fraud-detective') return <FraudPage />
   if (pathname === '/inventory') return <InventoryPage />
   if (pathname === '/incidents') return <IncidentsPage />
-  const title = pathname === '/settings' ? 'Settings' : 'Help center'
-  if (pathname === '/settings') return <section className="panel" style={{ padding: 28 }}><p className="overline">SYSTEM PREFERENCES</p><h1>{title}</h1><p className="subtitle">Manage your profile, notifications, theme, and account preferences.</p><div className="playground-fields"><label>Display name<input defaultValue="Alex Rivera" /></label><label>Email notifications<select defaultValue="Important alerts"><option>Important alerts</option><option>All activity</option><option>None</option></select></label><label>Theme<select defaultValue="System"><option>System</option><option>Light</option><option>Dark</option></select></label></div><button className="primary-button" onClick={onSave}>Save preferences</button></section>
+  const title = pathname === '/settings' ? 'Settings' : 'Help center'    
+  if (pathname === '/settings') {
+    return (
+      <section className="panel" style={{ padding: 28 }}>
+        <p className="overline">SYSTEM PREFERENCES</p>
+        <h1 style={{ marginBottom: 6 }}>Settings</h1>
+        <p className="subtitle" style={{ marginBottom: 28 }}>
+          Manage your profile and personalize your workspace.
+        </p>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 20,
+          }}
+        >
+          <div className="panel" style={{ padding: 20 }}>
+            <h3 style={{ marginTop: 0 }}>Profile information</h3>
+            <p className="subtitle">
+              Update the name displayed in your workspace.
+            </p>
+            <label style={{ display: 'block', marginTop: 20 }}>
+              Display name
+              <input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                aria-label="Display name"
+                id="display-name"
+                style={{ width: '100%', marginTop: 8 }}
+              />
+            </label>
+          </div>
+
+          <div className="panel" style={{ padding: 20 }}>
+            <h3 style={{ marginTop: 0 }}>Notifications</h3>
+            <p className="subtitle">
+              Choose which email alerts you want to receive.
+            </p>
+            <label style={{ display: 'block', marginTop: 20 }}>
+              Email notifications
+              <select
+                id="email-notifications"   
+                value={emailNotifications}
+                onChange={(e) => setEmailNotifications(e.target.value)} 
+                aria-label="Email notifications"
+                style={{ width: '100%', marginTop: 8 }}
+              >
+                <option>Important alerts</option>
+                <option>All activity</option>
+                <option>None</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="panel" style={{ padding: 20 }}>
+            <h3 style={{ marginTop: 0 }}>Appearance</h3>
+            <p className="subtitle">
+              Choose your preferred interface theme.
+            </p>
+            <label style={{ display: 'block', marginTop: 20 }}>
+              Theme
+              <select
+                id="app-theme"
+                value={appTheme}
+                onChange={(e) => setAppTheme(e.target.value)}
+                aria-label="Theme"
+                style={{ width: '100%', marginTop: 8 }}
+              >
+                <option>System</option>
+                <option>Light</option>
+                <option>Dark</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 24 }}>
+          <button className="primary-button" onClick={() => { localStorage.setItem('nexus-guard-display-name', displayName.trim() || 'Alex Rivera')
+              localStorage.setItem('nexus-guard-email-notifications', emailNotifications)
+              localStorage.setItem('nexus-guard-theme', appTheme)
+              setNameSaved(true)
+              onSave()}}>
+            Save preferences
+          </button>
+
+          {nameSaved && (<p className="subtitle" role="status">Display name saved successfully.</p>)}
+        </div>
+      </section>
+    )
+  }
+
   return <section className="panel" style={{ padding: 28 }}><p className="overline">SUPPORT LIBRARY</p><h1>{title}</h1><p className="subtitle">Search guidance for your workspace and security operations.</p><div className="search-field" style={{ maxWidth: 520 }}><Search /><input placeholder="Search FAQs and guidance..." /></div><div className="alert-list" style={{ marginTop: 24 }}><div className="alert-item info"><div><strong>How do I investigate a high-risk transaction?</strong><p>Open Fraud detective to review risk signals, velocity, and device context.</p></div></div><div className="alert-item warning"><div><strong>What do inventory alerts mean?</strong><p>Inventory alerts identify products approaching a configured stock threshold.</p></div></div><div className="alert-item critical"><div><strong>Need more help?</strong><p>Use your organization&apos;s internal support channel; no contact details are configured here.</p></div></div></div></section>
 }
 
@@ -1994,11 +2105,97 @@ export default function Page() {
 
   const [range, setRange] = useState('30 days')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchTerm = searchQuery.trim().toLowerCase()
+  const searchResults = useMemo(() => {
+    if (!searchTerm) return []
+
+    const transactions = liveTransactions
+      .filter((tx) =>
+        `${tx.transaction_reference} ${tx.id} ${tx.status} ${tx.risk_level} ${tx.amount}`
+          .toLowerCase()
+          .includes(searchTerm)
+      )
+      .slice(0, 5)
+      .map((tx) => ({
+        label: tx.transaction_reference,
+        detail: `₹${Number(tx.amount).toLocaleString('en-IN')} · ${tx.risk_level}`,
+        path: '/transactions',
+      }))
+
+    const products = liveProducts
+      .filter((product) =>
+        `${product.name} ${product.sku} ${product.category}`
+          .toLowerCase()
+          .includes(searchTerm)
+      )
+      .slice(0, 5)
+      .map((product) => ({
+        label: product.name,
+        detail: `${product.sku} · Stock: ${product.stock}`,
+        path: '/inventory',
+      }))
+
+    return [...transactions, ...products].slice(0, 8)
+  }, [searchTerm, liveTransactions, liveProducts])
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [customizeOpen, setCustomizeOpen] = useState(false)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [displayName, setDisplayName] = useState('Alex Rivera')
+  const [emailNotifications, setEmailNotifications] = useState('Important alerts')  
+  const [appTheme, setAppTheme] = useState('System')
+
+  useEffect(() => {
+    const root = document.documentElement
+
+    const applyTheme = (theme: string) => {
+      const isDark =
+        theme === 'Dark' ||
+        (theme === 'System' &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+      root.classList.toggle('dark', isDark)
+      root.style.colorScheme = isDark ? 'dark' : 'light'
+    }
+
+    applyTheme(appTheme)
+
+    if (appTheme === 'System') {
+      const media = window.matchMedia('(prefers-color-scheme: dark)')
+      const handleChange = () => applyTheme('System')
+
+      media.addEventListener('change', handleChange)
+      return () => media.removeEventListener('change', handleChange)
+    }
+  }, [appTheme])
+
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('nexus-guard-theme')
+    if (storedTheme === 'System' || storedTheme === 'Light' || storedTheme === 'Dark') {
+      setAppTheme(storedTheme)
+    }
+  }, [])
+
+  useEffect(() => {
+    const storedPreference = localStorage.getItem('nexus-guard-email-notifications')
+    if (
+      storedPreference === 'Important alerts' ||
+      storedPreference === 'All activity' ||
+      storedPreference === 'None'
+    ) {
+      setEmailNotifications(storedPreference)
+    }
+  }, [])
+
+  useEffect(() => {
+    const storedName = localStorage.getItem('nexus-guard-display-name')
+    if (storedName) {
+      setDisplayName(storedName)
+    }
+  }, [])
   const [menuOpen, setMenuOpen] = useState(false)
   const [playgroundOpen, setPlaygroundOpen] = useState(false)
   const [amount, setAmount] = useState('2480')
@@ -2303,12 +2500,74 @@ const [foreignTransaction, setForeignTransaction] = useState(true)
       setFraudLoading(false)
     }
   }
+    
+  const trendData = useMemo(() => {
+    const days = range === '7 days' ? 7 : range === '90 days' ? 90 : 30
+    const now = new Date()
+    const startDate = new Date(now)
+    startDate.setDate(now.getDate() - (days - 1))
+    startDate.setHours(0, 0, 0, 0)
 
+    const buckets = Array.from({ length: days }, (_, index) => {
+      const date = new Date(startDate)
+      date.setDate(startDate.getDate() + index)
 
-  const trendData = {
-    labels: ['01 Jun', '05 Jun', '09 Jun', '13 Jun', '17 Jun', '21 Jun', '25 Jun', '30 Jun'],
-    datasets: [{ label: 'Revenue', data: [42, 58, 48, 72, 64, 91, 78, 106], borderColor: '#12b8a6', backgroundColor: 'rgba(18,184,166,.11)', fill: true, tension: .42, pointRadius: 0, pointHoverRadius: 5 }],
-  }
+      return {
+        date,
+        total: 0,
+      }
+    })
+
+    liveTransactions.forEach((tx) => {
+      const transactionDate = new Date(tx.created_at)
+      const amount = Number(tx.amount)
+
+      if (
+        Number.isNaN(transactionDate.getTime()) ||
+        !Number.isFinite(amount) ||
+        transactionDate < startDate ||
+        transactionDate > now
+      ) {
+        return
+      }
+
+      const dayIndex = Math.floor(
+        (new Date(
+          transactionDate.getFullYear(),
+          transactionDate.getMonth(),
+          transactionDate.getDate(),
+        ).getTime() -
+          startDate.getTime()) /
+          (24 * 60 * 60 * 1000),
+      )
+
+      if (dayIndex >= 0 && dayIndex < buckets.length) {
+        buckets[dayIndex].total += amount
+      }
+    })
+
+    const labelFormatter = new Intl.DateTimeFormat('en-IN', {
+      day: '2-digit',
+      month: 'short',
+    })
+
+    return {
+      labels: buckets.map(({ date }) => labelFormatter.format(date)),
+      datasets: [
+        {
+          label: 'Transaction amount',
+          data: buckets.map(({ total }) => Number(total.toFixed(2))),
+          borderColor: '#12b8a6',
+          backgroundColor: 'rgba(18,184,166,.11)',
+          fill: true,
+          tension: 0.42,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+        },
+      ],
+    }
+  }, [liveTransactions, range])
+
   
   const fraudData = {
     labels: ['Low risk', 'Medium', 'High', 'Critical'],
@@ -2360,14 +2619,182 @@ const inventorySummary = useMemo(() => {
         <div className="brand"><div className="brand-mark"><ShieldCheck /></div><div><strong>NEXUS <span>GUARD</span></strong><small>COMMERCE INTELLIGENCE</small></div><button className="mobile-close" onClick={() => setMenuOpen(false)} aria-label="Close navigation"><X /></button></div>
         <div className="workspace-switcher"><div className="workspace-icon"><Store /></div><div><small>WORKSPACE</small><strong>Aurelia Commerce</strong></div><ChevronDown className="workspace-chevron" /></div>
         <nav className="side-nav" aria-label="Main navigation"><p className="nav-label">COMMAND CENTER</p>{navItems.map((item) => <button key={item.label} onClick={() => { 
-          router.push(item.label === 'Overview'? '/' : item.label === 'Incident center' ? '/incidents' : `/${item.label.toLowerCase().replaceAll(' ', '-')}` ); setMenuOpen(false) }} className={`nav-item ${activeNav.toLowerCase() === item.label.toLowerCase() ? 'active' : ''}`}><item.icon /><span>{item.label}</span>{item.count && <em>{item.count}</em>}</button>)}<p className="nav-label secondary-label">SYSTEM</p><button className={`nav-item ${pathname === '/settings' ? 'active' : ''}`} onClick={() => router.push('/settings')}><Settings2 /><span>Settings</span></button><button className={`nav-item ${pathname === '/help' ? 'active' : ''}`} onClick={() => router.push('/help')}><CircleHelp /><span>Help center</span></button></nav>
-        <div className="sidebar-bottom"><div className="status-line"><span className="online-dot" />All systems operational</div><div className="profile"><div className="avatar avatar-teal">AR</div><div><strong>Alex Rivera</strong><small>Security admin</small></div><LogOut /></div></div>
+          router.push(item.label === 'Overview'? '/' : item.label === 'Incident center' ? '/incidents' : `/${item.label.toLowerCase().replaceAll(' ', '-')}` ); setMenuOpen(false) }} className={`nav-item ${activeNav.toLowerCase() === item.label.toLowerCase() ? 'active' : ''}`}><item.icon /><span>{item.label}</span></button>)}<p className="nav-label secondary-label">SYSTEM</p><button className={`nav-item ${pathname === '/settings' ? 'active' : ''}`} onClick={() => router.push('/settings')}><Settings2 /><span>Settings</span></button><button className={`nav-item ${pathname === '/help' ? 'active' : ''}`} onClick={() => router.push('/help')}><CircleHelp /><span>Help center</span></button></nav>
+        <div className="sidebar-bottom"><div className="status-line"><span className="online-dot" />All systems operational</div><div className="profile"><div className="avatar avatar-teal"><UserRound size={18} /></div><div><strong>{displayName}</strong><small>Security admin</small></div></div></div>
       </aside>
 
-      <section className="content-area">
-        <header className="topbar"><button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Menu /></button><div className="breadcrumbs"><span>Command center</span><span>/</span><strong>{activeNav}</strong></div><div className="topbar-actions"><button className="icon-button" aria-label="Search" onClick={() => setSearchOpen(!searchOpen)}><Search /></button><button className="icon-button notification-button" aria-label="Notifications" onClick={() => setNotificationsOpen(!notificationsOpen)}><Bell /><i /></button><button className="top-avatar" aria-label="Open profile menu" onClick={() => setProfileOpen(!profileOpen)}>AR</button></div></header>{searchOpen && <div className="panel" style={{ position: 'absolute', right: 42, top: 58, zIndex: 10, padding: 12 }}><input autoFocus placeholder="Search NEXUS GUARD..." aria-label="Search NEXUS GUARD" /></div>}{notificationsOpen && <div className="panel" role="status" style={{ position: 'absolute', right: 80, top: 58, zIndex: 10, padding: 16, width: 260 }}><strong>Notifications</strong><p className="subtitle">3 priority alerts need attention.</p></div>}{profileOpen && <div className="panel" style={{ position: 'absolute', right: 24, top: 58, zIndex: 10, padding: 8, width: 180 }}><button className="nav-item" onClick={() => router.push('/settings')}>My Profile</button><button className="nav-item" onClick={() => router.push('/settings')}>Account Settings</button><button className="nav-item" onClick={() => router.push('/help')}>Help &amp; Support</button><button className="nav-item" onClick={() => setProfileOpen(false)}><LogOut /> Sign Out</button></div>}
+      <section className="content-area"><header className="topbar"><button className="mobile-menu" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Menu /></button><div className="breadcrumbs"><span>Command center</span><span>/</span><strong>{activeNav}</strong></div><div className="topbar-actions"><button className="icon-button" aria-label="Search" onClick={() => setSearchOpen(!searchOpen)}><Search /></button><button className="icon-button notification-button" aria-label="Notifications" onClick={() => setNotificationsOpen(!notificationsOpen)}><Bell /><i /></button>
+      <button className="top-avatar" aria-label="Open profile menu" onClick={() => setProfileOpen(!profileOpen)} >
+        <UserRound size={18} />
+      </button>
+      </div></header>
+        {searchOpen && (
+          <div
+            className="panel"
+            style={{
+              position: 'absolute',
+              right: 42,
+              top: 58,
+              zIndex: 10,
+              padding: 12,
+              width: 320,
+              maxWidth: 'calc(100vw - 32px)',
+            }}
+          >
+            <input
+              autoFocus
+              placeholder="Search transactions and products..."
+              aria-label="Search NEXUS GUARD"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: '100%' }}
+            />
+
+            {searchTerm && (
+              <div style={{ marginTop: 12 }}>
+                {searchResults.length > 0 ? (
+                  searchResults.map((result) => (
+                    <button
+                      key={result.path + result.label}
+                      className="nav-item"
+                      style={{ width: '100%', textAlign: 'left' }}
+                      onClick={() => {
+                        router.push(result.path)
+                        setSearchOpen(false)
+                        setSearchQuery('')
+                      }}
+                    >
+                      <span>
+                        <strong>{result.label}</strong>
+                        <small style={{ display: 'block' }}>{result.detail}</small>
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="subtitle" style={{ padding: 8 }}>
+                    No matching transactions or products found.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}              
+        {notificationsOpen && (
+          <div
+            className="panel"
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 58,
+              zIndex: 10,
+              padding: 12,
+              width: 340,
+              maxWidth: 'calc(100vw - 32px)',
+            }}
+          >
+            <strong>Notifications</strong>
+
+            {priorityAlerts.length > 0 ? (
+              <div style={{ marginTop: 10 }}>
+                {priorityAlerts.map((alert) => (
+                  <button
+                    key={alert.id}
+                    className="nav-item"
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      height: 'auto',
+                      padding: 10,
+                    }}
+                    onClick={() => {
+                      router.push(
+                        alert.type === 'transaction'
+                          ? '/transactions'
+                          : '/inventory'
+                      )
+                      setNotificationsOpen(false)
+                    }}
+                  >
+                    <span>
+                      <strong>{alert.title}</strong>
+                      <small style={{ display: 'block' }}>
+                        {alert.description}
+                      </small>
+                      <small style={{ display: 'block', opacity: 0.7 }}>
+                        {alert.time}
+                      </small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="subtitle" style={{ padding: 8 }}>
+                No active priority alerts.
+              </p>
+            )}
+          </div>
+        )}
+              
+        {profileOpen && (
+          <div className="panel" style={{position: 'absolute', right: 24, top: 58,zIndex: 10,padding: 8,width: 200,}}>
+            <p style={{ padding: '8px 12px', margin: 0, fontWeight: 600 }}>
+              {displayName}
+            </p>
+            <button
+              className="nav-item"
+              style={{ width: '100%' }}
+              onClick={() => {
+                router.push('/settings')
+                setProfileOpen(false)
+              }}
+            >
+              My Profile
+            </button>
+
+            <button
+              className="nav-item"
+              style={{ width: '100%' }}
+              onClick={() => {
+                router.push('/settings')
+                setProfileOpen(false)
+              }}
+            >
+              Account Settings
+            </button>
+
+            <button
+              className="nav-item"
+              style={{ width: '100%' }}
+              onClick={() => {
+                router.push('/help')
+                setProfileOpen(false)
+              }}
+            >
+              Help &amp; Support
+            </button>
+
+            <button
+              className="nav-item"
+              style={{ width: '100%' }}
+              onClick={() => setProfileOpen(false)}
+            >
+              Close Menu
+            </button>
+          </div>
+        )}
+        
         <div className="page-content">
-          {pathname !== '/' ? <RoutePage pathname={pathname} onSave={() => setSaved(true)} /> : <>
+          {pathname !== '/' ? 
+          <RoutePage
+            pathname={pathname}
+            onSave={() => setSaved(true)}
+            displayName={displayName}
+            setDisplayName={setDisplayName}
+            emailNotifications={emailNotifications}
+            setEmailNotifications={setEmailNotifications}
+            appTheme={appTheme}
+            setAppTheme={setAppTheme}
+          /> : <>
           {saved && <div className="analysis-result" role="status">Preferences saved for this session.</div>}
           <div className="welcome-row"><div><p className="overline"><span className="live-pulse" />LIVE MONITORING</p><h1>Good morning, Alex <span>↗</span></h1><p className="subtitle">Here&apos;s what&apos;s happening across your commerce network.</p></div><div className="header-actions"><button className="secondary-button" onClick={() => setCustomizeOpen(true)}><SlidersHorizontal /> Customize</button>{customizeOpen && <div className="modal-backdrop" onClick={() => setCustomizeOpen(false)}><section className="playground-modal" onClick={(e) => e.stopPropagation()}><h2>Customize dashboard</h2><p className="subtitle">Choose which monitoring areas to prioritize.</p><label className="playground-fields"><span>Density<select defaultValue="Comfortable"><option>Comfortable</option><option>Compact</option></select></span></label><button className="primary-button" onClick={() => setCustomizeOpen(false)}>Apply changes</button></section></div>}
           <button
